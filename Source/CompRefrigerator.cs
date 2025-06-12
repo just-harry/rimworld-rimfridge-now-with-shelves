@@ -93,19 +93,34 @@ namespace RimFridge
 		{
 			base.CompTickRare();
 
-			//Check for alcohol that is best drunk cold.
-			foreach (IntVec3 cell in  ((Building_Storage) parent).AllSlotCells())
+			if (!this.parent.Spawned)
 			{
-				foreach (Thing thing in GridsUtility.GetThingList(cell, parent.Map))
+				return;
+			}
+
+			if (Settings.enableFrostyBeverages)
+			{
+				/* Check for beverages which are best enjoyed cold. */
+				foreach (IntVec3 cell in ((Building_Storage) parent).AllSlotCells())
 				{
-					if (drinksBestCold.Contains(thing.def.defName) && ThingCompUtility.TryGetComp<CompFrosty>(thing) == null)
+					foreach (Thing thing in GridsUtility.GetThingList(cell, parent.Map))
 					{
-						ThingWithComps thingWithComps = thing as ThingWithComps;
-						CompFrosty compFrosty = new CompFrosty();
-						thingWithComps.AllComps.Add(compFrosty);
-						compFrosty.props = CompProperties_Frosty.Beer;
-						compFrosty.parent = thingWithComps;
-						((TickList) typeof(TickManager).GetField("tickListRare", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(Find.TickManager)).RegisterThing(thingWithComps);
+						if (drinksBestCold.Contains(thing.def.defName) && ThingCompUtility.TryGetComp<CompFrosty>(thing) == null)
+						{
+							ThingWithComps thingWithComps = thing as ThingWithComps;
+							CompFrosty compFrosty = new CompFrosty();
+							thingWithComps.AllComps.Add(compFrosty);
+							compFrosty.props = CompProperties_Frosty.Beer;
+							compFrosty.parent = thingWithComps;
+
+							/* If this thing's ticker-type is rare,
+							   it will have already been registered in the rare-tick-list
+							   by `Thing#SpawnSetup`; if so we won't register it again. */
+							if (thingWithComps.def.tickerType != TickerType.Rare)
+							{
+								CompFrosty.tickListRareOfTickManager(Find.TickManager).RegisterThing(thingWithComps);
+							}
+						}
 					}
 				}
 			}

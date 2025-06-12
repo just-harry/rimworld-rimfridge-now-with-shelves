@@ -52,6 +52,7 @@ namespace RimFridge
 				{
 					action = delegate
 					{
+						Verse.Sound.SoundStarter.PlayOneShotOnCamera(RimWorld.SoundDefOf.Tick_High);
 						isDarklight = !isDarklight;
 						SetLightColor();
 						base.parent.Map.glowGrid.DeRegisterGlower(this);

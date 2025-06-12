@@ -136,8 +136,8 @@ namespace RimFridge
 					{
 						if (
 							   t.Map != null
-							&& !t.IsForbidden(getter)
 							&& t is Building_Storage storage
+							&& !t.IsForbidden(getter)
 						)
 						{
 							foreach (IntVec3 cell in storage.AllSlotCells())
@@ -145,9 +145,9 @@ namespace RimFridge
 								foreach (Thing possibleFood in t.Map.thingGrid.ThingsAt(cell))
 								{
 									if (
-										   !possibleFood.IsForbidden(getter)
+										   getter.RaceProps.CanEverEat(possibleFood)
+										&& !possibleFood.IsForbidden(getter)
 										&& storage.Map.reservationManager.CanReserve(getter, new LocalTargetInfo(possibleFood))
-										&& getter.RaceProps.CanEverEat(possibleFood)
 									)
 									{
 										__result = true;

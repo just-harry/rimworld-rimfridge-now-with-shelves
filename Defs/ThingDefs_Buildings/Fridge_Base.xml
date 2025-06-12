@@ -29,6 +29,7 @@
 			<li>BuildingsFurniture</li>
 		</thingCategories>
 		<building>
+			<blueprintClass>Blueprint_Storage</blueprintClass>
 			<preventDeteriorationInside>true</preventDeteriorationInside>
 			<preventDeteriorationOnTop>true</preventDeteriorationOnTop>
 			<ignoreStoredThingsBeauty>true</ignoreStoredThingsBeauty>

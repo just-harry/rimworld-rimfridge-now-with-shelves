@@ -81,22 +81,23 @@ namespace RimFridge
 
 			Widgets.Label(new Rect(20, 100, 400, 30), "RimFridge.PowerFactorExplanation".Translate());
 			Widgets.CheckboxLabeled(new Rect(0, 140, 200, 30), "RimFridge.ActAsTradeBeacon".Translate(), ref Settings.ActAsBeacon);
+			Widgets.CheckboxLabeled(new Rect(0, 180, 200, 30), "RimFridge.EnableFrostyBeverages".Translate(), ref Settings.enableFrostyBeverages);
 
 			if (ShouldShowCompatibilitySettings)
 			{
-				Widgets.DrawMenuSection(new Rect(0, 180, 800, 370));
+				Widgets.DrawMenuSection(new Rect(0, 210, 800, 370));
 
-				Widgets.Label(new Rect(10, 180, 790, 30), "RimFridge.Compatibility".Translate());
+				Widgets.Label(new Rect(10, 210, 790, 30), "RimFridge.Compatibility".Translate());
 
-				Widgets.Label(new Rect(10, 210, 790, 30), "RimFridge.ForceApplicationOfThesePatches".Translate());
-				Widgets.BeginScrollView(new Rect(0, 250, 800, 300), ref guiState.forcedApplicationOfPatchesScrollPosition, new Rect(0, 250, 800 - GenUI.ScrollBarWidth, 30 * Settings.forcedApplicationOfPatches.Count));
+				Widgets.Label(new Rect(10, 240, 790, 30), "RimFridge.ForceApplicationOfThesePatches".Translate());
+				Widgets.BeginScrollView(new Rect(0, 280, 800, 300), ref guiState.forcedApplicationOfPatchesScrollPosition, new Rect(0, 250, 800 - GenUI.ScrollBarWidth, 30 * Settings.forcedApplicationOfPatches.Count));
 
 				for (int index = 0; index < Settings.forcedApplicationOfPatches.Count; ++index)
 				{
 					var patch = Settings.forcedApplicationOfPatches[index];
 
 					Widgets.CheckboxLabeled(
-						new Rect(20, 250 + index * 30, 780 - GenUI.ScrollBarWidth, 28),
+						new Rect(20, 280 + index * 30, 780 - GenUI.ScrollBarWidth, 28),
 						patch.patch,
 						ref patch.shouldForceApplication,
 						placeCheckboxNearText: true
@@ -138,6 +139,7 @@ namespace RimFridge
 	{
 		public static readonly FloatInput PowerFactor = new FloatInput("RimFridge.BasePowerFactor");
 		public static bool ActAsBeacon = false;
+		public static bool enableFrostyBeverages = true;
 		/* Making this a List causes access to be O(n), but we want to maintain
 			the order the patches were loaded in. */
 		public static List<ApplicationOfPatch> forcedApplicationOfPatches = new();
@@ -159,6 +161,7 @@ namespace RimFridge
 			base.ExposeData();
 			Scribe_Values.Look(ref(PowerFactor.AsString), "RimFridge.PowerFactor", "1.00", false);
 			Scribe_Values.Look(ref ActAsBeacon, "RimFridge.ActAsBeacon", false, false);
+			Scribe_Values.Look(ref enableFrostyBeverages, "RimFridge.EnableFrostyBeverages", true, false);
 			Scribe_Collections.Look(ref forcedApplicationOfPatches, "RimFridge.ForcedApplicationOfPatches", LookMode.Deep);
 
 			if (Scribe.mode == LoadSaveMode.PostLoadInit)

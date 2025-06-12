@@ -1,3 +1,4 @@
+using HarmonyLib;
 using System.Collections.Generic;
 using System.Reflection;
 using Verse;
@@ -6,6 +7,10 @@ namespace RimFridge
 {
 	internal class CompFrosty : ThingComp
 	{
+		public static readonly AccessTools.FieldRef<TickManager, TickList> tickListRareOfTickManager = (
+			AccessTools.FieldRefAccess<TickManager, TickList>("tickListRare")
+		);
+
 		// Most beer's ideal temperature is around 8 degC
 		private const float IDEAL_TEMPERATURE = 8f;
 
@@ -18,6 +23,11 @@ namespace RimFridge
 		{
 			base.PostIngested(ingester);
 
+			if (!Settings.enableFrostyBeverages)
+			{
+				return;
+			}
+
 			if (temperature <= IDEAL_TEMPERATURE)
 			{
 				ingester.needs.mood.thoughts.memories.TryGainMemory(Props.thought, null);
@@ -26,63 +36,70 @@ namespace RimFridge
 
 		public override void PostSplitOff (Thing piece)
 		{
+			if (!Settings.enableFrostyBeverages)
+			{
+				return;
+			}
+
 			ThingWithComps thingWithComps = piece as ThingWithComps;
 
-			if (ThingCompUtility.TryGetComp<CompFrosty>(thingWithComps) == null)
+			if (thingWithComps.GetComp<CompFrosty>() == null)
 			{
 				CompFrosty compFrosty = new CompFrosty();
 				thingWithComps.AllComps.Add(compFrosty);
 				compFrosty.props = CompProperties_Frosty.Beer;
 				compFrosty.parent = thingWithComps;
 				compFrosty.temperature = temperature;
-				((TickList) typeof(TickManager).GetField("tickListRare", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(Find.TickManager)).RegisterThing(thingWithComps);
+
+				/* If this thing's ticker-type is rare,
+				   it will have already been registered in the rare-tick-list
+				   by `Thing#SpawnSetup`; if so we won't register it again. */
+				if (thingWithComps.def.tickerType != TickerType.Rare)
+				{
+					tickListRareOfTickManager(Find.TickManager).RegisterThing(thingWithComps);
+				}
 			}
 		}
 
 		public override void CompTickRare ()
 		{
+			if (!Settings.enableFrostyBeverages)
+			{
+				return;
+			}
+
 			base.CompTickRare();
-			float num = 15f;
 
-			if (parent.MapHeld != null)
+			if (!this.parent.Spawned)
 			{
-				num = GridsUtility.GetTemperature(parent.PositionHeld, parent.MapHeld);
+				return;
 			}
 
-			CompEquippable comp = parent.GetComp<CompEquippable>();
+			Map map = this.parent.MapHeld;
+			IntVec3 cell = this.parent.PositionHeld;
 
-			if (comp != null)
+			float ambientTemperature;
+
+			if (FridgeCache.TryGetFridge(cell, map, out CompRefrigerator fridge))
 			{
-				Pawn casterPawn = comp.PrimaryVerb.CasterPawn;
-
-				if (casterPawn != null)
-				{
-					num = GridsUtility.GetTemperature(casterPawn.PositionHeld, casterPawn.MapHeld);
-				}
+				ambientTemperature = fridge.currentTemp;
+			}
+			else
+			{
+				GenTemperature.TryGetTemperatureForCell(cell, map, out ambientTemperature);
 			}
 
-			if (parent.Spawned)
-			{
-				List<Thing> thingList = GridsUtility.GetThingList(parent.PositionHeld, parent.MapHeld);
-
-				for (int i = 0; i < thingList.Count; i++)
-				{
-					CompRefrigerator fridge = ThingCompUtility.TryGetComp<CompRefrigerator>(thingList[i]);
-
-					if (fridge != null)
-					{
-						num = fridge.currentTemp;
-						break;
-					}
-				}
-			}
-
-			temperature += (num - temperature) * 0.05f;
+			this.temperature += (ambientTemperature - this.temperature) * 0.05f;
 		}
 
 		public override string CompInspectStringExtra ()
 		{
-			return (temperature <= IDEAL_TEMPERATURE) ? "RimFridge.FrostyBeverage".Translate() : "";
+			if (!Settings.enableFrostyBeverages)
+			{
+				return null;
+			}
+
+			return this.temperature <= IDEAL_TEMPERATURE ? "RimFridge.FrostyBeverage".Translate() : null;
 		}
 	}
 }
